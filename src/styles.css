@@ -824,3 +824,15 @@ select::-ms-expand {
     grid-column: 1 / -1;
   }
 }
+
+@media (max-width: 390px) {
+  .input-grid,
+  .settings-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .input-grid > label:not(.size-field),
+  .settings-grid > label:not(.size-field) {
+    grid-column: 1 / -1;
+  }
+}

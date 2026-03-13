@@ -150,11 +150,11 @@ function App() {
             <p className="meta">{editUseCustomOptions ? "저장 시 현재 파일에만 적용됩니다." : "현재는 입력 패널의 기본 옵션을 사용합니다."}</p>
 
             <div className="grid settings-grid">
-              <label>
+              <label className="size-field">
                 너비
                 <input type="number" min={16} max={8000} value={editOutput.width} onFocus={(event) => event.currentTarget.select()} onChange={(event) => onEditWidthChange(Number(event.target.value))} disabled={!editUseCustomOptions} />
               </label>
-              <label>
+              <label className="size-field">
                 높이
                 <input type="number" min={16} max={8000} value={editOutput.height} onFocus={(event) => event.currentTarget.select()} onChange={(event) => onEditHeightChange(Number(event.target.value))} disabled={!editUseCustomOptions} />
               </label>
