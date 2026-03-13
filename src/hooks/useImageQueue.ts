@@ -144,7 +144,7 @@ export function useImageQueue() {
 
     const downloadName = buildDownloadName(target.fileName, target.customOutput?.format ?? fallbackFormat);
     if (isMobileLikeBrowser()) {
-      void tryMobileDownload(target.downloadUrl, downloadName);
+      triggerMobileDownload(target.downloadUrl, downloadName);
       return;
     }
 
@@ -220,29 +220,18 @@ function isMobileLikeBrowser(): boolean {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 }
 
-async function tryMobileDownload(downloadUrl: string, downloadName: string): Promise<void> {
-  try {
-    if ("share" in navigator && typeof navigator.share === "function" && downloadUrl.startsWith("blob:")) {
-      const response = await fetch(downloadUrl);
-      const blob = await response.blob();
-      const file = new File([blob], downloadName, { type: blob.type || "application/octet-stream" });
-      const canShareFiles = "canShare" in navigator && typeof navigator.canShare === "function" ? navigator.canShare({ files: [file] }) : false;
-      if (canShareFiles) {
-        await navigator.share({ files: [file], title: downloadName });
-        return;
-      }
-    }
-  } catch {
-    // Fallback below handles browsers that block share/download APIs.
-  }
-
+function triggerMobileDownload(downloadUrl: string, downloadName: string): void {
   if (isIosLikeBrowser()) {
     window.location.assign(downloadUrl);
     return;
   }
 
-  const popup = window.open(downloadUrl, "_blank", "noopener,noreferrer");
-  if (!popup) {
-    window.location.assign(downloadUrl);
-  }
+  const anchor = document.createElement("a");
+  anchor.href = downloadUrl;
+  anchor.download = downloadName;
+  anchor.rel = "noreferrer noopener";
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
 }
