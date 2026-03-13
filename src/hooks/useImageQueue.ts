@@ -143,23 +143,19 @@ export function useImageQueue() {
     if (!target?.downloadUrl) return;
 
     const downloadName = buildDownloadName(target.fileName, target.customOutput?.format ?? fallbackFormat);
+    if (isMobileLikeBrowser()) {
+      void tryMobileDownload(target.downloadUrl, downloadName);
+      return;
+    }
+
     const anchor = document.createElement("a");
     anchor.href = target.downloadUrl;
     anchor.download = downloadName;
-    anchor.target = "_blank";
     anchor.rel = "noreferrer noopener";
     anchor.style.display = "none";
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-
-    // iOS Safari can ignore the `download` attribute for blob URLs.
-    if (isIosLikeBrowser() && target.downloadUrl.startsWith("blob:")) {
-      const popup = window.open(target.downloadUrl, "_blank", "noopener,noreferrer");
-      if (!popup) {
-        window.location.href = target.downloadUrl;
-      }
-    }
   };
 
   const removeItem = (itemId: string) => {
@@ -217,4 +213,36 @@ function buildDownloadName(fileName: string, format: OutputFormat): string {
 function isIosLikeBrowser(): boolean {
   if (typeof navigator === "undefined") return false;
   return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+}
+
+function isMobileLikeBrowser(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+async function tryMobileDownload(downloadUrl: string, downloadName: string): Promise<void> {
+  try {
+    if ("share" in navigator && typeof navigator.share === "function" && downloadUrl.startsWith("blob:")) {
+      const response = await fetch(downloadUrl);
+      const blob = await response.blob();
+      const file = new File([blob], downloadName, { type: blob.type || "application/octet-stream" });
+      const canShareFiles = "canShare" in navigator && typeof navigator.canShare === "function" ? navigator.canShare({ files: [file] }) : false;
+      if (canShareFiles) {
+        await navigator.share({ files: [file], title: downloadName });
+        return;
+      }
+    }
+  } catch {
+    // Fallback below handles browsers that block share/download APIs.
+  }
+
+  if (isIosLikeBrowser()) {
+    window.location.assign(downloadUrl);
+    return;
+  }
+
+  const popup = window.open(downloadUrl, "_blank", "noopener,noreferrer");
+  if (!popup) {
+    window.location.assign(downloadUrl);
+  }
 }
