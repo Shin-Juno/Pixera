@@ -142,12 +142,24 @@ export function useImageQueue() {
     const target = outputItemsRef.current.find((item) => item.id === itemId);
     if (!target?.downloadUrl) return;
 
+    const downloadName = buildDownloadName(target.fileName, target.customOutput?.format ?? fallbackFormat);
     const anchor = document.createElement("a");
     anchor.href = target.downloadUrl;
-    anchor.download = buildDownloadName(target.fileName, target.customOutput?.format ?? fallbackFormat);
+    anchor.download = downloadName;
     anchor.target = "_blank";
-    anchor.rel = "noreferrer";
+    anchor.rel = "noreferrer noopener";
+    anchor.style.display = "none";
+    document.body.appendChild(anchor);
     anchor.click();
+    anchor.remove();
+
+    // iOS Safari can ignore the `download` attribute for blob URLs.
+    if (isIosLikeBrowser() && target.downloadUrl.startsWith("blob:")) {
+      const popup = window.open(target.downloadUrl, "_blank", "noopener,noreferrer");
+      if (!popup) {
+        window.location.href = target.downloadUrl;
+      }
+    }
   };
 
   const removeItem = (itemId: string) => {
@@ -200,4 +212,9 @@ function buildDownloadName(fileName: string, format: OutputFormat): string {
   const baseName = dotIndex > 0 ? fileName.slice(0, dotIndex) : fileName;
   const extension = format === "jpeg" ? "jpg" : format;
   return `${baseName}-resized.${extension}`;
+}
+
+function isIosLikeBrowser(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
 }
