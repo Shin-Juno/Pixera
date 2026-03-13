@@ -246,6 +246,15 @@ h2 {
   gap: 10px;
 }
 
+.input-grid > label {
+  min-width: 0;
+}
+
+.input-grid > label > input,
+.input-grid > label > select {
+  width: 100%;
+}
+
 label {
   display: flex;
   flex-direction: column;
@@ -803,5 +812,15 @@ select::-ms-expand {
   .theme-fab {
     top: 12px;
     right: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .input-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .input-grid > label:not(.size-field) {
+    grid-column: 1 / -1;
   }
 }

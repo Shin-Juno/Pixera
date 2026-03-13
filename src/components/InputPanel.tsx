@@ -82,12 +82,12 @@ function InputPanel(props: InputPanelProps) {
         <span>가로세로 비율 유지</span>
       </label>
 
-      <div className="grid">
-        <label>
+      <div className="grid input-grid">
+        <label className="size-field">
           너비
           <input type="number" min={16} max={8000} value={width} onFocus={selectAllOnFocus} onChange={(e) => onWidthChange(Number(e.target.value))} />
         </label>
-        <label>
+        <label className="size-field">
           높이
           <input type="number" min={16} max={8000} value={height} onFocus={selectAllOnFocus} onChange={(e) => onHeightChange(Number(e.target.value))} />
         </label>
