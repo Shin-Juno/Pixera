@@ -9,6 +9,7 @@ const MAX_BYTES = 20 * 1024 * 1024;
 export interface QueueItem extends OutputListItem {
   file: File;
   aspectRatio: number;
+  downloadBlob?: Blob;
   customOutput?: ResizeOutput;
   customKeepAspect?: boolean;
 }
@@ -120,7 +121,7 @@ export function useImageQueue() {
     if (!target) return;
 
     const effectiveOutput = target.useCustomOptions && target.customOutput ? target.customOutput : defaultOutput;
-    updateItem(itemId, { status: "PROCESSING", progress: 8, error: "", downloadUrl: "" });
+    updateItem(itemId, { status: "PROCESSING", progress: 8, error: "", downloadUrl: "", downloadBlob: undefined });
 
     try {
       const processed = await processImageInBrowser({
@@ -131,7 +132,7 @@ export function useImageQueue() {
 
       if (!outputItemsRef.current.some((item) => item.id === itemId)) return;
       const downloadUrl = URL.createObjectURL(processed.blob);
-      updateItem(itemId, { status: "DONE", progress: 100, downloadUrl });
+      updateItem(itemId, { status: "DONE", progress: 100, downloadUrl, downloadBlob: processed.blob });
     } catch (err) {
       const message = err instanceof Error ? err.message : "처리 중 오류가 발생했습니다.";
       updateItem(itemId, { status: "FAILED", error: message, progress: 0 });
@@ -144,6 +145,9 @@ export function useImageQueue() {
 
     const downloadName = buildDownloadName(target.fileName, target.customOutput?.format ?? fallbackFormat);
     if (isMobileLikeBrowser()) {
+      if (tryNativeShareDownload(target.downloadBlob, downloadName)) {
+        return;
+      }
       triggerMobileDownload(target.downloadUrl, downloadName);
       return;
     }
@@ -220,8 +224,32 @@ function isMobileLikeBrowser(): boolean {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 }
 
+function isKakaoInAppBrowser(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /KAKAOTALK/i.test(navigator.userAgent);
+}
+
+function tryNativeShareDownload(blob: Blob | undefined, downloadName: string): boolean {
+  if (typeof navigator === "undefined") return false;
+  if (!blob) return false;
+  if (typeof navigator.share !== "function") return false;
+
+  const file = new File([blob], downloadName, { type: blob.type || "application/octet-stream" });
+  if (typeof navigator.canShare === "function" && !navigator.canShare({ files: [file] })) {
+    return false;
+  }
+
+  void navigator.share({ files: [file], title: downloadName }).catch(() => {});
+  return true;
+}
+
 function triggerMobileDownload(downloadUrl: string, downloadName: string): void {
   if (isIosLikeBrowser()) {
+    window.location.assign(downloadUrl);
+    return;
+  }
+
+  if (isKakaoInAppBrowser()) {
     window.location.assign(downloadUrl);
     return;
   }
