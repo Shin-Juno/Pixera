@@ -184,7 +184,7 @@ function App() {
             </div>
 
             <div className="settings-actions">
-              <button type="button" className="ghost-button" onClick={closeSettings}>
+              <button type="button" className="action" onClick={closeSettings}>
                 취소
               </button>
               <button type="button" className="action" onClick={saveSettings}>
