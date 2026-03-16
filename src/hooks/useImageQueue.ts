@@ -239,7 +239,7 @@ function tryNativeShareDownload(blob: Blob | undefined, downloadName: string): b
     return false;
   }
 
-  void navigator.share({ files: [file], title: downloadName }).catch(() => {});
+  void navigator.share({ files: [file], title: downloadName }).catch(() => { });
   return true;
 }
 
